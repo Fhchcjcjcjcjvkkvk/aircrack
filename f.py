@@ -45,14 +45,15 @@ def scan_wifi():
     time.sleep(2)  # Wait for the scan to complete
 
     results = iface.scan_results()  # Get the list of available networks
-    print("\nBSSID              PWR   AUTH")
+    print("\nBSSID              PWR   ESSID              AUTH")
 
     network_details = get_wifi_details()  # Get network details using netsh
 
-    # Display network details in columns: BSSID, PWR, AUTH
+    # Display network details in columns: BSSID, PWR, ESSID, AUTH
     for network in results:
         bssid = network.bssid  # BSSID
         signal_strength = network.signal  # Signal strength (PWR)
+        ssid = network.ssid  # ESSID
 
         # Find the authentication type using netsh info
         auth_type = "Unknown"
@@ -62,7 +63,7 @@ def scan_wifi():
                 break
 
         # Print formatted output for each network
-        print(f"{bssid:<18} {signal_strength:>3} {auth_type:>4}")
+        print(f"{bssid:<18} {signal_strength:>3} {ssid:<20} {auth_type:>4}")
 
 # Function to continuously scan every 4 seconds and update
 def live_scan():
