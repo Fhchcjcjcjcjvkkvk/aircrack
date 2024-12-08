@@ -68,7 +68,7 @@ def set_monitor_mode(interface):
 def main():
     # Ensure that the script is being run with an interface argument
     if len(sys.argv) != 2:
-        print("[ERROR] Usage: sudo python3 airhunter.py <interface_name>")
+        print("[ERROR] Usage: sudo python3 airSPY.py <interface_name>")
         sys.exit(1)
 
     interface = sys.argv[1]
