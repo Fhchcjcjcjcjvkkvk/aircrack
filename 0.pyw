@@ -1,88 +1,56 @@
 import time
 import os
-import scapy.all as scapy
+import subprocess
+from scapy.all import sniff
 from pywifi import PyWiFi, const
-from subprocess import check_output
+from threading import Thread
 
-# Function to scan WiFi networks using scapy
-def scan_wifi(interface):
-    print("Scanning WiFi networks...")
-    networks = []
-    
-    def packet_handler(pkt):
-        if pkt.haslayer(scapy.Dot11Beacon):  # Beacon frame
-            ssid = pkt.info.decode('utf-8', errors='ignore')  # ESSID
-            bssid = pkt.addr2  # BSSID
-            channel = int(ord(pkt[scapy.Dot11Elt:3].info))  # Channel
-            power = pkt.dBm_AntSignal  # Signal power
-            
-            network = {
-                'BSSID': bssid,
-                'SSID': ssid,
-                'Power': power,
-                'Channel': channel
-            }
-            if network not in networks:
-                networks.append(network)
-
-    # Start sniffing packets on the given interface
-    scapy.sniff(iface=interface, prn=packet_handler, timeout=5)
-    
-    return networks
-
-# Function to get WiFi authentication using PyWiFi
-def get_authentication():
-    wifi = PyWiFi()
-    iface = wifi.interfaces()[0]  # Use the first interface
-    iface.scan()  # Scan for networks
-    results = iface.scan_results()
-    
-    for result in results:
-        # Check if 'Authentication' is available using netsh (for Windows)
-        ssid = result.ssid
-        command = f'netsh wlan show network mode=bssid'
-        networks_info = check_output(command, shell=True).decode()
-        
-        # Extract the authentication method
-        auth_line = [line for line in networks_info.split('\n') if ssid in line]
-        for line in auth_line:
-            if "Authentication" in line:
-                auth_method = line.split(":")[1].strip()
-                return auth_method
-        
+# Function to get authentication info via netsh
+def get_authentication(bssid):
+    command = f'netsh wlan show network bssid {bssid}'
+    output = subprocess.check_output(command, shell=True, text=True)
+    for line in output.splitlines():
+        if "Authentication" in line:
+            return line.split(":")[1].strip()
     return "Unknown"
 
-# Get the default WiFi interface on Windows
-def get_wifi_interface():
+# Function to process the sniffed packets
+def process_packet(packet):
+    if packet.haslayer("Dot11Beacon"):
+        bssid = packet[Dot11].addr3
+        essid = packet[Dot11Elt].info.decode("utf-8", errors="ignore")
+        signal_strength = packet.dBm_AntSignal if hasattr(packet, "dBm_AntSignal") else "N/A"
+        channel = ord(packet[Dot11Elt:3].info)  # Channel is in the 3rd Dot11Elt
+
+        # Get Authentication via netsh
+        auth = get_authentication(bssid)
+
+        # Print the network details
+        print(f"BSSID: {bssid} | ESSID: {essid} | Signal: {signal_strength}dBm | Channel: {channel} | Auth: {auth}")
+
+# Function to scan Wi-Fi networks using Scapy
+def wifi_scan():
+    print("Starting Wi-Fi scan... Press CTRL+C to stop.")
+    sniff(iface="WiFi", prn=process_packet, store=0)
+
+# Function to run PyWiFi to get available networks every 5 seconds
+def live_scan():
     wifi = PyWiFi()
-    interfaces = wifi.interfaces()
-    for iface in interfaces:
-        if iface.status() == const.IFACE_CONNECTED:  # Check if the interface is connected
-            return iface.name
-    return None
+    iface = wifi.interfaces()[0]  # Assume the first interface is the Wi-Fi interface
 
-# Main loop to show results live every 5 seconds
-def main():
-    wifi_interface = get_wifi_interface()
-    if not wifi_interface:
-        print("No Wi-Fi interface found.")
-        return
-    
-    print(f"Using interface: {wifi_interface}")
-    
     while True:
-        networks = scan_wifi(wifi_interface)
-        auth_method = get_authentication()
+        iface.scan()
+        networks = iface.scan_results()
 
-        print("Networks found:")
-        print(f"{'BSSID':<20} {'SSID':<30} {'Power':<10} {'Channel':<8} {'Authentication'}")
-        print("-" * 80)
-        
+        # Print available networks with PyWiFi info
         for network in networks:
-            print(f"{network['BSSID']:<20} {network['SSID']:<30} {network['Power']:<10} {network['Channel']:<8} {auth_method}")
+            print(f"PyWiFi BSSID: {network['BSSID']} | ESSID: {network['ssid']} | Signal: {network['signal']}dBm")
 
-        time.sleep(5)  # Update every 5 seconds
-        os.system('cls' if os.name == 'nt' else 'clear')  # Clear the screen to refresh
+        time.sleep(5)  # Wait for 5 seconds before scanning again
 
-if __name__ == "__main__":
-    main()
+# Start the Scapy sniffing in a separate thread
+scapy_thread = Thread(target=wifi_scan, daemon=True)
+scapy_thread.start()
+
+# Start the PyWiFi live scanning in the main thread
+live_scan()
