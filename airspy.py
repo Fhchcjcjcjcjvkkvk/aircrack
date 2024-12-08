@@ -1,12 +1,31 @@
 import os
 import sys
 from scapy.all import sniff, Dot11, Dot11Beacon, Dot11Data
+from pywifi import PyWiFi, const, Profile
 from collections import defaultdict
-import signal
 
 # Dictionary to track beacon count and data frames count for each SSID
 beacon_counts = defaultdict(int)
 data_counts = defaultdict(int)
+
+# Function to list available Wi-Fi interfaces using PyWiFi
+def list_wifi_interfaces():
+    """List all Wi-Fi interfaces on the system."""
+    wifi = PyWiFi()
+    interfaces = wifi.interfaces()
+    print("\nAvailable Wi-Fi Interfaces:")
+    for i, iface in enumerate(interfaces):
+        print(f"[{i}] {iface.name()}")
+    return interfaces
+
+# Function to enable monitor mode (if supported)
+def enable_monitor_mode(interface):
+    """
+    Enable monitor mode on a Wi-Fi interface.
+    Note: This functionality is not directly supported by PyWiFi on Windows.
+    """
+    print(f"[INFO] PyWiFi does not support enabling monitor mode on Windows. Ensure the interface is set manually.")
+    return interface  # Return the interface as is
 
 # Function to get authentication modes, BSSID, RSSI from Beacon frames
 def get_auth_modes(packet):
@@ -14,7 +33,7 @@ def get_auth_modes(packet):
     if packet.haslayer(Dot11Beacon):
         ssid = packet[Dot11].info.decode(errors="ignore")  # Extract SSID
         bssid = packet[Dot11].addr3  # Extract BSSID (MAC address of the access point)
-        rssi = packet.dBm_AntSignal  # Extract RSSI (signal strength)
+        rssi = getattr(packet, 'dBm_AntSignal', 'N/A')  # Extract RSSI (signal strength) if available
         capabilities = packet[Dot11Beacon].capability
         auth_mode = "Open"  # Default to open authentication
 
@@ -45,23 +64,34 @@ def packet_callback(packet):
             data_counts[ssid] += 1
 
 # Function to sniff packets on the specified interface
-def sniff_packets(interface):
+def sniff_packets(interface_name):
     """Start sniffing Wi-Fi packets on a given interface."""
-    print(f"\n[INFO] Starting packet sniffing on interface: {interface}")
+    print(f"\n[INFO] Starting packet sniffing on interface: {interface_name}")
     print(f"{'BSSID':<20} {'SSID':<30} {'Auth Mode':<10} {'PWR':<10} {'Beacon':<10} {'#Data':<10}")
     print("=" * 120)  # Separator line
-    sniff(prn=packet_callback, store=0, iface=interface, timeout=0)  # Infinite sniffing unless stopped manually
+    sniff(prn=packet_callback, store=0, iface=interface_name, timeout=0)  # Infinite sniffing unless stopped manually
 
 def main():
-    # Ensure that the script is being run with an interface argument
-    if len(sys.argv) != 2:
-        print("[ERROR] Usage: sudo python3 airSPY.py <interface_name>")
+    # List available Wi-Fi interfaces and let the user select one
+    interfaces = list_wifi_interfaces()
+    if not interfaces:
+        print("[ERROR] No Wi-Fi interfaces found. Ensure your adapter is installed and enabled.")
         sys.exit(1)
 
-    interface = sys.argv[1]
+    try:
+        interface_index = int(input("Select the interface index to use for sniffing: "))
+        if interface_index < 0 or interface_index >= len(interfaces):
+            print("[ERROR] Invalid interface index.")
+            sys.exit(1)
+    except ValueError:
+        print("[ERROR] Please enter a valid numeric index.")
+        sys.exit(1)
+
+    interface = interfaces[interface_index]
+    interface_name = enable_monitor_mode(interface.name())
 
     # Start sniffing Wi-Fi packets
-    sniff_packets(interface)
+    sniff_packets(interface_name)
 
 if __name__ == "__main__":
     main()
