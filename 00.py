@@ -64,11 +64,31 @@ def scan_wifi():
 
         # Print formatted output for each network
         print(f"{bssid:<18} {signal_strength:>3} {ssid:<20} {auth_type:>4}")
+    
+    return results
 
-# Function to perform the scan once and display the results
+# Function to perform the scan and only show if there is new data
+def check_for_changes(last_scan_results):
+    current_scan_results = scan_wifi()
+    
+    # Compare the results with the previous scan to check for any changes
+    if current_scan_results != last_scan_results:
+        return current_scan_results
+    else:
+        return None
+
+# Function to perform a single scan and wait for changes
 def single_scan():
-    print("\033[H\033[J", end="")  # Clears the console screen (works in most terminals)
-    scan_wifi()  # Scan for available networks
+    last_scan_results = None
+
+    while True:
+        print("\033[H\033[J", end="")  # Clears the console screen
+        new_data = check_for_changes(last_scan_results)
+        
+        if new_data:  # Only print if there is new data
+            last_scan_results = new_data  # Update last scan data
+
+        time.sleep(4)  # Wait before scanning again
 
 # Start the single scan
 if __name__ == "__main__":
