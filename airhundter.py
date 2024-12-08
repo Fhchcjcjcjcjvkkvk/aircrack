@@ -3,7 +3,7 @@ import subprocess
 import pywifi
 from pywifi import PyWiFi
 
-# Function to get Wi-Fi authentication type and channel using netsh
+# Function to get Wi-Fi authentication type using netsh
 def get_wifi_details():
     # Running the netsh command to get network details
     command = "netsh wlan show networks mode=bssid"
@@ -14,7 +14,6 @@ def get_wifi_details():
     current_bssid = None
     current_ssid = None
     current_auth = None
-    current_channel = None
     current_signal = None
     current_beacon = None
 
@@ -22,7 +21,7 @@ def get_wifi_details():
     for line in networks_info:
         if "BSSID" in line:
             if current_bssid:  # Store the previous network details before moving to the next one
-                network_details.append((current_bssid, current_ssid, current_signal, current_beacon, current_channel, current_auth))
+                network_details.append((current_bssid, current_ssid, current_signal, current_beacon, current_auth))
 
             # Start a new network entry
             current_bssid = line.split(":")[1].strip()
@@ -30,15 +29,13 @@ def get_wifi_details():
             current_ssid = line.split(":")[1].strip()
         elif "Authentication" in line:
             current_auth = line.split(":")[1].strip()
-        elif "Channel" in line:
-            current_channel = line.split(":")[1].strip()
         elif "Signal" in line:
             current_signal = line.split(":")[1].strip()
         elif "Beacons" in line:
             current_beacon = line.split(":")[1].strip()
 
     if current_bssid:  # Don't forget the last network
-        network_details.append((current_bssid, current_ssid, current_signal, current_beacon, current_channel, current_auth))
+        network_details.append((current_bssid, current_ssid, current_signal, current_beacon, current_auth))
 
     return network_details
 
@@ -51,28 +48,26 @@ def scan_wifi():
     time.sleep(2)  # Wait for the scan to complete
 
     results = iface.scan_results()  # Get the list of available networks
-    print("\nBSSID              PWR  Beacons  CH   AUTH")
+    print("\nBSSID              PWR  Beacons  AUTH")
 
     network_details = get_wifi_details()  # Get network details using netsh
 
-    # Display network details in columns: BSSID, PWR, Beacons, CH, AUTH
+    # Display network details in columns: BSSID, PWR, Beacons, AUTH
     for network in results:
         ssid = network.ssid  # ESSID
         bssid = network.bssid  # BSSID
         signal_strength = network.signal  # Signal strength (PWR)
         beacon_count = network.beacon  # Beacons
 
-        # Find the authentication type and channel using netsh info
+        # Find the authentication type using netsh info
         auth_type = "Unknown"
-        channel = "Unknown"
         for detail in network_details:
             if detail[0] == bssid:
-                auth_type = detail[5]  # Authentication
-                channel = detail[4]  # Channel
+                auth_type = detail[4]  # Authentication
                 break
 
         # Print formatted output for each network
-        print(f"{bssid:<18} {signal_strength:>3} {beacon_count:>8} {channel:>3} {auth_type:>4}")
+        print(f"{bssid:<18} {signal_strength:>3} {beacon_count:>8} {auth_type:>4}")
 
 # Function to continuously scan every 4 seconds and update
 def live_scan():
