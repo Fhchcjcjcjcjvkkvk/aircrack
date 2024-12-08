@@ -2,6 +2,7 @@ import os
 import sys
 from scapy.all import sniff, Dot11, Dot11Beacon, Dot11Data
 from collections import defaultdict
+import signal
 
 # Dictionary to track beacon count and data frames count for each SSID
 beacon_counts = defaultdict(int)
@@ -51,20 +52,6 @@ def sniff_packets(interface):
     print("=" * 120)  # Separator line
     sniff(prn=packet_callback, store=0, iface=interface, timeout=0)  # Infinite sniffing unless stopped manually
 
-# Function to set the interface to monitor mode using system commands
-def set_monitor_mode(interface):
-    """Set the given interface to monitor mode using iw and ip commands."""
-    print(f"[INFO] Setting {interface} to monitor mode...")
-    try:
-        # Set the interface to monitor mode
-        os.system(f"sudo ip link set {interface} down")  # Bring the interface down
-        os.system(f"sudo iw dev {interface} set type monitor")  # Set to monitor mode
-        os.system(f"sudo ip link set {interface} up")  # Bring the interface up
-        print(f"[INFO] {interface} set to monitor mode.")
-    except Exception as e:
-        print(f"[ERROR] Failed to set {interface} to monitor mode: {e}")
-        exit(1)
-
 def main():
     # Ensure that the script is being run with an interface argument
     if len(sys.argv) != 2:
@@ -72,9 +59,6 @@ def main():
         sys.exit(1)
 
     interface = sys.argv[1]
-
-    # Set the interface to monitor mode
-    set_monitor_mode(interface)
 
     # Start sniffing Wi-Fi packets
     sniff_packets(interface)
