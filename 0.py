@@ -65,13 +65,11 @@ def scan_wifi():
         # Print formatted output for each network
         print(f"{bssid:<18} {signal_strength:>3} {ssid:<20} {auth_type:>4}")
 
-# Function to continuously scan every 4 seconds and update
-def live_scan():
-    while True:
-        print("\033[H\033[J", end="")  # Clears the console screen (works in most terminals)
-        scan_wifi()  # Scan for available networks
-        time.sleep(4)  # Wait 4 seconds before the next scan
+# Function to perform the scan once and display the results
+def single_scan():
+    print("\033[H\033[J", end="")  # Clears the console screen (works in most terminals)
+    scan_wifi()  # Scan for available networks
 
-# Start the live scanning
+# Start the single scan
 if __name__ == "__main__":
-    live_scan()
+    single_scan()
