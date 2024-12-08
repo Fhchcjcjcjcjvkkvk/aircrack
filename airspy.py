@@ -47,7 +47,7 @@ def packet_callback(packet):
 def sniff_packets(interface):
     """Start sniffing Wi-Fi packets on a given interface."""
     print(f"\n[INFO] Starting packet sniffing on interface: {interface}")
-    print(f"{'BSSID':<20} {'SSID':<30} {'Auth Mode':<10} {'RSSI (dBm)':<10} {'Beacon Count':<10} {'Data Count':<10}")
+    print(f"{'BSSID':<20} {'SSID':<30} {'Auth Mode':<10} {'PWR':<10} {'Beacon':<10} {'#Data':<10}")
     print("=" * 120)  # Separator line
     sniff(prn=packet_callback, store=0, iface=interface, timeout=0)  # Infinite sniffing unless stopped manually
 
