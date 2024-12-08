@@ -57,7 +57,7 @@ def get_wifi_interface():
     wifi = PyWiFi()
     interfaces = wifi.interfaces()
     for iface in interfaces:
-        if iface.status() == const.IFACE_CONNECTED or iface.status() == const.IFACE_IDLE:
+        if iface.status() == const.IFACE_CONNECTED:  # Check if the interface is connected
             return iface.name
     return None
 
