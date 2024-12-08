@@ -5,7 +5,7 @@ from pywifi import PyWiFi, const
 from subprocess import check_output
 
 # Function to scan WiFi networks using scapy
-def scan_wifi():
+def scan_wifi(interface):
     print("Scanning WiFi networks...")
     networks = []
     
@@ -25,8 +25,8 @@ def scan_wifi():
             if network not in networks:
                 networks.append(network)
 
-    # Start sniffing packets
-    scapy.sniff(iface="wlan0", prn=packet_handler, timeout=5)
+    # Start sniffing packets on the given interface
+    scapy.sniff(iface=interface, prn=packet_handler, timeout=5)
     
     return networks
 
@@ -52,10 +52,26 @@ def get_authentication():
         
     return "Unknown"
 
+# Get the default WiFi interface on Windows
+def get_wifi_interface():
+    wifi = PyWiFi()
+    interfaces = wifi.interfaces()
+    for iface in interfaces:
+        if iface.status() == const.IFACE_CONNECTED or iface.status() == const.IFACE_IDLE:
+            return iface.name
+    return None
+
 # Main loop to show results live every 5 seconds
 def main():
+    wifi_interface = get_wifi_interface()
+    if not wifi_interface:
+        print("No Wi-Fi interface found.")
+        return
+    
+    print(f"Using interface: {wifi_interface}")
+    
     while True:
-        networks = scan_wifi()
+        networks = scan_wifi(wifi_interface)
         auth_method = get_authentication()
 
         print("Networks found:")
