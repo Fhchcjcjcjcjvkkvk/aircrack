@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const chalk = require('chalk'); // Import chalk for coloring text
+const chalk = require('chalk'); // Import the chalk library
 
 // Create an Express app
 const app = express();
@@ -13,10 +13,10 @@ app.post('/', (req, res) => {
     // Get the credentials from the request body
     const { username, password } = req.body;
     
-    // For demonstration, print the credentials in green
+    // Log the credentials in green
     console.log(chalk.green(`Received credentials: Username: ${username}, Password: ${password}`));
     
-    // Respond with a success message (you can adjust this based on your need)
+    // Respond with a success message
     res.send('Login successful!');
 });
 
