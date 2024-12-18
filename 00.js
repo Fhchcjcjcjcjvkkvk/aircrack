@@ -1,6 +1,7 @@
 // Import required modules
 const express = require('express');
 const bodyParser = require('body-parser');
+const chalk = require('chalk');  // Import chalk for coloring the output
 
 // Create an Express app
 const app = express();
@@ -12,9 +13,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.post('/', (req, res) => {
     // Get the credentials from the request body
     const { username, password } = req.body;
-    
-    // For demonstration, simply log the credentials to the console
-    console.log(`Received credentials: Username: ${username}, Password: ${password}`);
+
+    // Print the credentials in green
+    console.log(chalk.green(`Received credentials: Username: ${username}, Password: ${password}`));
     
     // Respond with a success message (you can adjust this based on your need)
     res.send('Login successful!');
