@@ -1,6 +1,6 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const chalk = require('chalk'); // Import the chalk library
+import express from 'express';
+import bodyParser from 'body-parser';
+import chalk from 'chalk'; // Using ES module import
 
 // Create an Express app
 const app = express();
